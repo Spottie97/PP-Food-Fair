@@ -14,14 +14,21 @@ const getSignedJwtToken = (id) => {
 // @route   POST /api/v1/auth/register
 // @access  Public
 exports.register = asyncHandler(async (req, res, next) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password } = req.body; // Role is determined by server now
+
+  // Determine role based on email matching ADMIN_EMAIL from environment
+  let roleForUser = "user";
+  if (process.env.ADMIN_EMAIL && email === process.env.ADMIN_EMAIL) {
+    roleForUser = "admin";
+    console.log(`Assigning admin role to user: ${email}`); // Log admin assignment
+  }
 
   // Create user
   const user = await User.create({
     username,
     email,
     password,
-    role, // Note: In a real app, you might restrict role assignment
+    role: roleForUser,
   });
 
   sendTokenResponse(user, 201, res);

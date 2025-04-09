@@ -10,7 +10,10 @@ import {
   Alert,
   Paper,
   CircularProgress,
+  Grid,
+  Link,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -92,19 +95,13 @@ const LoginPage = () => {
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
           </Button>
-          {/* Add link to registration page */}
-          {/* <Grid container>
-            <Grid item xs>
-              <Link href="#" variant="body2">
-                Forgot password?
-              </Link>
-            </Grid>
+          <Grid container justifyContent="flex-end">
             <Grid item>
-              <Link href="/register" variant="body2">
+              <Link component={RouterLink} to="/register" variant="body2">
                 {"Don't have an account? Sign Up"}
               </Link>
             </Grid>
-          </Grid> */}
+          </Grid>
         </Box>
       </Paper>
     </Container>

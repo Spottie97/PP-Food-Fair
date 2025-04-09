@@ -26,9 +26,8 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
 const RecipeFormPage = () => {
   const navigate = useNavigate();
-  // const { id } = useParams(); // Uncomment when adding Edit mode
-  // const isEditMode = Boolean(id);
-  const isEditMode = false; // For now, always Create mode
+  const { id } = useParams(); // Get ID from URL for edit mode
+  const isEditMode = Boolean(id); // Determine if we are editing
 
   const [pieName, setPieName] = useState('');
   const [variant, setVariant] = useState('Standard');
@@ -41,6 +40,7 @@ const RecipeFormPage = () => {
 
   const [availableIngredients, setAvailableIngredients] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(isEditMode); // Loading state for fetching data in edit mode
   const [error, setError] = useState('');
   const [ingredientOptionsLoading, setIngredientOptionsLoading] = useState(false);
 
@@ -64,7 +64,58 @@ const RecipeFormPage = () => {
     fetchIngredients();
   }, []);
 
-  // TODO: useEffect for Edit mode to fetch recipe data by ID
+  // useEffect for Edit mode to fetch recipe data by ID
+  useEffect(() => {
+    if (isEditMode && id) {
+      const fetchRecipeData = async () => {
+        setInitialLoading(true);
+        setError('');
+        try {
+          const response = await apiClient.get(`/recipes/${id}`);
+          if (response.data.success) {
+            const recipe = response.data.data;
+            setPieName(recipe.pieName);
+            setVariant(recipe.variant || 'Standard'); // Handle potential missing variant
+            setBatchSize(recipe.batchSize.toString()); // Ensure string for TextField
+            setMarkupPercentage(recipe.markupPercentage.toString());
+            setLaborHourlyRate(recipe.laborHourlyRate.toString());
+            setNotes(recipe.notes || '');
+
+            // Map fetched ingredients to the state structure, ensuring ingredient object is populated
+            // The GET /recipes/:id route populates ingredient details
+            setIngredients(recipe.ingredients.map(ing => ({
+              ingredient: ing.ingredient, // The populated ingredient object
+              quantity: ing.quantity.toString(),
+              unit: ing.ingredient.unit // Set unit from the populated ingredient
+            })));
+
+            // Map fetched labor inputs
+            setLaborInputs(recipe.laborInputs.map(lab => ({
+                workers: lab.workers.toString(),
+                hoursPerWorker: lab.hoursPerWorker.toString()
+            })));
+
+            // Handle cases where fetched data might be empty (though schema should prevent this)
+            if (recipe.ingredients.length === 0) {
+               setIngredients([{ ingredient: null, quantity: '', unit: '' }]);
+            }
+             if (recipe.laborInputs.length === 0) {
+               setLaborInputs([{ workers: '', hoursPerWorker: '' }]);
+            }
+
+          } else {
+            setError(`Failed to fetch recipe data: ${response.data.message}`);
+          }
+        } catch (err) {
+          setError(err.response?.data?.message || `An error occurred while fetching recipe ${id}.`);
+          console.error("Fetch recipe error:", err);
+        } finally {
+          setInitialLoading(false);
+        }
+      };
+      fetchRecipeData();
+    }
+  }, [id, isEditMode]); // Depend on id and isEditMode
 
   // --- Ingredient Handlers ---
   const handleIngredientChange = (index, selectedOption) => {
@@ -151,7 +202,7 @@ const RecipeFormPage = () => {
     try {
         let response;
         if (isEditMode) {
-            // response = await apiClient.put(`/recipes/${id}`, recipeData);
+            response = await apiClient.put(`/recipes/${id}`, recipeData);
         } else {
             response = await apiClient.post('/recipes', recipeData);
         }
@@ -167,6 +218,15 @@ const RecipeFormPage = () => {
     }
     setLoading(false);
   };
+
+  // Show loading indicator while fetching data for edit mode
+  if (initialLoading) {
+    return (
+      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="md">
@@ -251,7 +311,7 @@ const RecipeFormPage = () => {
                     }}
                     isOptionEqualToValue={(option, value) => option._id === value?._id}
                     loading={ingredientOptionsLoading}
-                    disabled={loading}
+                    disabled={loading || initialLoading}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -278,7 +338,7 @@ const RecipeFormPage = () => {
                     type="number"
                     value={item.quantity}
                     onChange={(e) => handleIngredientQuantityChange(index, e.target.value)}
-                    disabled={loading}
+                    disabled={loading || initialLoading}
                     inputProps={{ min: 0, step: "any" }}
                   />
                 </Grid>
@@ -294,7 +354,7 @@ const RecipeFormPage = () => {
                     />
                 </Grid>
                 <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton onClick={() => removeIngredient(index)} disabled={ingredients.length <= 1 || loading} color="error">
+                  <IconButton onClick={() => removeIngredient(index)} disabled={ingredients.length <= 1 || loading || initialLoading} color="error">
                     <RemoveCircleOutlineIcon />
                   </IconButton>
                 </Grid>
@@ -304,7 +364,7 @@ const RecipeFormPage = () => {
               <Button
                 startIcon={<AddCircleOutlineIcon />}
                 onClick={addIngredient}
-                disabled={loading}
+                disabled={loading || initialLoading}
               >
                 Add Ingredient
               </Button>
@@ -323,7 +383,7 @@ const RecipeFormPage = () => {
                 type="number"
                 value={laborHourlyRate}
                 onChange={(e) => setLaborHourlyRate(e.target.value)}
-                disabled={loading}
+                disabled={loading || initialLoading}
                 inputProps={{ min: 0, step: "any" }}
               />
             </Grid>
@@ -339,7 +399,7 @@ const RecipeFormPage = () => {
                         type="number"
                         value={input.workers}
                         onChange={(e) => handleLaborInputChange(index, 'workers', e.target.value)}
-                        disabled={loading}
+                        disabled={loading || initialLoading}
                         inputProps={{ min: 1 }}
                     />
                 </Grid>
@@ -351,12 +411,12 @@ const RecipeFormPage = () => {
                         type="number"
                         value={input.hoursPerWorker}
                         onChange={(e) => handleLaborInputChange(index, 'hoursPerWorker', e.target.value)}
-                        disabled={loading}
+                        disabled={loading || initialLoading}
                         inputProps={{ min: 0, step: "any" }}
                      />
                 </Grid>
                 <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton onClick={() => removeLaborInput(index)} disabled={laborInputs.length <= 1 || loading} color="error">
+                  <IconButton onClick={() => removeLaborInput(index)} disabled={laborInputs.length <= 1 || loading || initialLoading} color="error">
                     <RemoveCircleOutlineIcon />
                   </IconButton>
                 </Grid>
@@ -366,7 +426,7 @@ const RecipeFormPage = () => {
               <Button
                 startIcon={<AddCircleOutlineIcon />}
                 onClick={addLaborInput}
-                disabled={loading}
+                disabled={loading || initialLoading}
               >
                 Add Labor Input
               </Button>
@@ -382,17 +442,17 @@ const RecipeFormPage = () => {
                     rows={3}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || initialLoading}
                 />
             </Grid>
 
             {/* --- Submit Button --- */}
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                <Button onClick={() => navigate('/')} sx={{ mr: 1 }} disabled={loading}>
+                <Button onClick={() => navigate('/')} sx={{ mr: 1 }} disabled={loading || initialLoading}>
                     Cancel
                  </Button>
-                <Button type="submit" variant="contained" disabled={loading}>
+                <Button type="submit" variant="contained" disabled={loading || initialLoading}>
                   {loading ? <CircularProgress size={24} /> : (isEditMode ? 'Save Changes' : 'Create Recipe')}
                 </Button>
               </Box>

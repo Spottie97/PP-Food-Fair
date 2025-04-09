@@ -21,12 +21,16 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx'; // Import xlsx library
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 
 const DashboardPage = () => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth(); // Get user info from context
+  const isAdmin = user?.role === 'admin'; // Check if user is admin
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -55,14 +59,12 @@ const DashboardPage = () => {
 
   const handleViewRecipe = (id) => {
     // Navigate to recipe detail page (e.g., /recipes/:id)
-    console.log('Navigate to view recipe:', id);
-    // navigate(`/recipes/${id}`);
+    navigate(`/recipes/${id}`);
   };
 
   const handleEditRecipe = (id) => {
     // Navigate to recipe edit page (e.g., /recipes/:id/edit)
-    console.log('Navigate to edit recipe:', id);
-    // navigate(`/recipes/${id}/edit`);
+    navigate(`/recipes/${id}/edit`);
   };
 
   const handleDeleteRecipe = async (id) => {
@@ -83,6 +85,54 @@ const DashboardPage = () => {
 
   };
 
+  const handleExportExcel = () => {
+    console.log("Exporting recipes to Excel...");
+
+    // 1. Format data for worksheet
+    const dataForSheet = recipes.map(recipe => ({
+        'Pie Name': recipe.pieName,
+        'Variant': recipe.variant || 'Standard',
+        'Batch Size': recipe.batchSize,
+        'Cost Per Pie (R)': recipe.calculatedCosts?.costPerPie?.toFixed(2) ?? 'N/A',
+        'Selling Price (R)': recipe.sellingPrice?.toFixed(2) ?? 'N/A',
+        // Add more fields if needed, e.g., ingredients list, notes
+        'Total Ingredient Cost (R)': recipe.calculatedCosts?.totalIngredientCost?.toFixed(2) ?? 'N/A',
+        'Total Labor Cost (R)': recipe.calculatedCosts?.totalLaborCost?.toFixed(2) ?? 'N/A',
+        'Total Batch Cost (R)': recipe.calculatedCosts?.totalBatchCost?.toFixed(2) ?? 'N/A',
+        'Markup %': recipe.markupPercentage,
+        // 'Notes': recipe.notes
+    }));
+
+    // 2. Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Recipes");
+
+    // Optional: Adjust column widths (example)
+    const cols = [
+        { wch: 25 }, // Pie Name
+        { wch: 15 }, // Variant
+        { wch: 10 }, // Batch Size
+        { wch: 15 }, // Cost Per Pie
+        { wch: 15 }, // Selling Price
+        { wch: 20 }, // Total Ingredient Cost
+        { wch: 20 }, // Total Labor Cost
+        { wch: 20 }, // Total Batch Cost
+        { wch: 10 }, // Markup %
+        // { wch: 50 }  // Notes
+    ];
+    worksheet["!cols"] = cols;
+
+    // 3. Generate Excel file and trigger download
+    try {
+        XLSX.writeFile(workbook, "Pie_Recipes_Export.xlsx");
+        console.log("Excel export successful.");
+    } catch (err) {
+        console.error("Excel export error:", err);
+        setError("Failed to export data to Excel.");
+    }
+  };
+
   if (loading) {
     return (
       <Container sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
@@ -97,13 +147,25 @@ const DashboardPage = () => {
         <Typography variant="h4" component="h1">
           Pie Recipes Dashboard
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutlineIcon />}
-          onClick={handleAddRecipe}
-        >
-          Add New Recipe
-        </Button>
+        <Box> { /* Wrap buttons for alignment */}
+          <Button
+            variant="contained"
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={handleAddRecipe}
+            disabled={!isAdmin} // Disable if not admin
+            sx={{ mr: 1 }}
+          >
+            Add New Recipe
+          </Button>
+          <Button
+             variant="outlined"
+             onClick={handleExportExcel}
+             sx={{ ml: 2 }} // Add some margin
+             disabled={recipes.length === 0} // Disable if no data
+           >
+             Export to Excel
+           </Button>
+        </Box>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -116,8 +178,8 @@ const DashboardPage = () => {
                 <TableCell>Pie Name</TableCell>
                 <TableCell>Variant</TableCell>
                 <TableCell align="right">Batch Size</TableCell>
-                <TableCell align="right">Cost / Pie</TableCell>
-                <TableCell align="right">Selling Price</TableCell>
+                <TableCell align="right">Cost / Pie (R)</TableCell>
+                <TableCell align="right">Selling Price (R)</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -142,12 +204,16 @@ const DashboardPage = () => {
                       <IconButton size="small" onClick={() => handleViewRecipe(recipe._id)} title="View Details">
                          <VisibilityIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" onClick={() => handleEditRecipe(recipe._id)} title="Edit">
-                         <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => handleDeleteRecipe(recipe._id)} title="Delete">
-                         <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      {isAdmin && ( // Conditionally render Edit button
+                         <IconButton size="small" onClick={() => handleEditRecipe(recipe._id)} title="Edit">
+                            <EditIcon fontSize="small" />
+                         </IconButton>
+                      )}
+                      {isAdmin && ( // Conditionally render Delete button
+                         <IconButton size="small" onClick={() => handleDeleteRecipe(recipe._id)} title="Delete">
+                            <DeleteIcon fontSize="small" />
+                         </IconButton>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

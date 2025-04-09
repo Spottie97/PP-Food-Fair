@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from 'react-router-dom';
 import { Box, CircularProgress, Container, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
@@ -14,6 +15,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import RecipeFormPage from './pages/RecipeFormPage';
+import RecipeViewPage from './pages/RecipeViewPage';
+import IngredientManagementPage from './pages/IngredientManagementPage';
 
 // Placeholder Pages (create these later)
 // Wrap in Container for consistent padding/max-width
@@ -22,6 +25,8 @@ const NotFoundPage = () => <Container><div>404 Not Found Placeholder</div></Cont
 // Layout Component
 const Layout = ({ children }) => {
   const { logout, user, isAuthenticated } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const navigate = useNavigate();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -31,7 +36,12 @@ const Layout = ({ children }) => {
             Pie Pricing Calculator
           </Typography>
           <nav>
-            {/* Add navigation links here if needed */}
+            {isAuthenticated && (
+              <Button color="inherit" onClick={() => navigate('/')} sx={{ mr: 1 }}>Dashboard</Button>
+            )}
+            {isAdmin && (
+              <Button color="inherit" onClick={() => navigate('/ingredients')} sx={{ mr: 1 }}>Ingredients</Button>
+            )}
           </nav>
           {isAuthenticated && (
             <Button onClick={logout} variant="outlined" sx={{ my: 1, mx: 1.5 }}>
@@ -116,7 +126,32 @@ function App() {
           {/* Add routes for Recipe View, Edit, Create here */}
           {/* <Route path="/recipes/new" element={<ProtectedRoute><RecipeCreatePage /></ProtectedRoute>} /> */}
           {/* <Route path="/recipes/:id" element={<ProtectedRoute><RecipeViewPage /></ProtectedRoute>} /> */}
-          {/* <Route path="/recipes/:id/edit" element={<ProtectedRoute><RecipeEditPage /></ProtectedRoute>} /> */}
+          <Route
+            path="/recipes/:id/edit"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <RecipeFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recipes/:id"
+            element={
+              <ProtectedRoute>
+                <RecipeViewPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Ingredient Management Route (Admin only) */}
+          <Route
+            path="/ingredients"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <IngredientManagementPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Catch-all 404 */}
           <Route path="*" element={<NotFoundPage />} />
