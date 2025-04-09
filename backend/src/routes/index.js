@@ -12,10 +12,12 @@ const authRoutes = require("./authRoutes"); // Import auth routes
 const recipeRoutes = require("./recipeRoutes"); // Import recipe routes
 const ingredientRoutes = require("./ingredientRoutes"); // Import ingredient routes
 const laborRoutes = require("./laborRoutes"); // Import labor routes
+const userRoutes = require("./userRoutes"); // Import user routes
 
 router.use("/auth", authRoutes); // Mount auth routes under /auth
 router.use("/recipes", recipeRoutes); // Mount recipe routes under /recipes
 router.use("/ingredients", ingredientRoutes); // Mount ingredient routes under /ingredients
 router.use("/labor", laborRoutes); // Mount labor routes under /labor
+router.use("/users", userRoutes); // Mount user routes under /users
 
 module.exports = router;

@@ -17,6 +17,7 @@ import DashboardPage from './pages/DashboardPage';
 import RecipeFormPage from './pages/RecipeFormPage';
 import RecipeViewPage from './pages/RecipeViewPage';
 import IngredientManagementPage from './pages/IngredientManagementPage';
+import UserManagementPage from './pages/UserManagementPage';
 
 // Placeholder Pages (create these later)
 // Wrap in Container for consistent padding/max-width
@@ -41,6 +42,9 @@ const Layout = ({ children }) => {
             )}
             {isAdmin && (
               <Button color="inherit" onClick={() => navigate('/ingredients')} sx={{ mr: 1 }}>Ingredients</Button>
+            )}
+            {isAdmin && (
+              <Button color="inherit" onClick={() => navigate('/users')} sx={{ mr: 1 }}>Users</Button>
             )}
           </nav>
           {isAuthenticated && (
@@ -149,6 +153,16 @@ function App() {
             element={
               <ProtectedRoute roles={['admin']}>
                 <IngredientManagementPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* User Management Route (Admin only) */}
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <UserManagementPage />
               </ProtectedRoute>
             }
           />
