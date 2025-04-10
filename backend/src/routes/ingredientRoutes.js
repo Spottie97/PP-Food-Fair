@@ -5,6 +5,8 @@ const {
   createIngredient,
   updateIngredient,
   deleteIngredient,
+  importIngredients,
+  bulkDeleteIngredients,
 } = require("../controllers/ingredientController");
 const { check, param, body, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
@@ -92,5 +94,13 @@ router
     validateRequest,
     deleteIngredient
   );
+
+router.delete(
+  "/bulk-delete",
+  authorize("admin", "manager"),
+  bulkDeleteIngredients
+);
+
+router.post("/import", authorize("admin", "manager"), importIngredients);
 
 module.exports = router;
