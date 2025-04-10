@@ -239,3 +239,113 @@ exports.logout = asyncHandler(async (req, res, next) => {
     data: {},
   });
 });
+
+// @desc    Forgot password
+// @route   POST /api/v1/auth/forgotpassword
+// @access  Public
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+
+  // 1. Find user by email
+  const user = await User.findOne({ email });
+
+  // Explicitly check if user exists
+  if (!user) {
+    // If user not found, return 404
+    // The rate limiter above handles preventing brute-force guessing
+    return next(new ErrorResponse("Email address not found.", 404));
+  }
+
+  // 2. Generate reset token (the method saves the hashed version and expiry)
+  const resetToken = user.getPasswordResetToken();
+
+  // Save the user *with* the reset token fields
+  await user.save({ validateBeforeSave: false }); // Skip validation as we are not changing required fields
+
+  // 3. Create reset URL
+  // Note: This URL should point to your frontend password reset page
+  const resetUrl = `${
+    process.env.FRONTEND_URL || "http://localhost:3000"
+  }/reset-password/${resetToken}`;
+
+  const message = `
+    You are receiving this email because you (or someone else) has requested the reset of a password for your account at Pie Pricing Software.
+    Please click on the following link, or paste it into your browser to complete the process:
+    
+    ${resetUrl}
+    
+    If you did not request this, please ignore this email and your password will remain unchanged.
+    This link will expire in 10 minutes.
+  `;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Pie Pricing Software - Password Reset Request",
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    });
+  } catch (err) {
+    console.error("Password reset email sending error:", err);
+    // If email fails, clear the reset token fields so user can try again
+    user.passwordResetToken = undefined;
+    user.passwordResetExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(new ErrorResponse("Email could not be sent", 500));
+  }
+});
+
+// @desc    Reset password
+// @route   PUT /api/v1/auth/resetpassword/:resettoken
+// @access  Public
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+  // 1. Get hashed token from the URL param (match the one stored in DB)
+  const resetTokenFromUrl = req.params.resettoken;
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(resetTokenFromUrl)
+    .digest("hex");
+
+  // 2. Find user by hashed token and check expiry
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new ErrorResponse("Invalid or expired reset token", 400));
+  }
+
+  // 3. Set new password
+  user.password = req.body.password; // Password will be hashed by pre-save hook
+  user.passwordResetToken = undefined; // Clear reset fields
+  user.passwordResetExpire = undefined;
+
+  // Ensure user is marked as verified if they reset password (edge case)
+  if (!user.isVerified) {
+    user.isVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
+  }
+
+  // 4. Save the user with new password and cleared tokens
+  try {
+    await user.save(); // Validation (minlength) and hashing will run
+  } catch (error) {
+    // Handle potential validation errors (e.g., password too short)
+    return next(error);
+  }
+
+  // 5. Send response (optionally auto-login by sending token)
+  // sendTokenResponse(user, 200, res);
+  res.status(200).json({
+    success: true,
+    message: "Password reset successfully. You can now log in.",
+  });
+});

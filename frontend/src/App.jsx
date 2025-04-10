@@ -19,6 +19,8 @@ import RecipeFormPage from './pages/RecipeFormPage';
 import RecipeViewPage from './pages/RecipeViewPage';
 import IngredientManagementPage from './pages/IngredientManagementPage';
 import UserManagementPage from './pages/UserManagementPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Placeholder Pages (create these later)
 // Wrap in Container for consistent padding/max-width
@@ -100,6 +102,14 @@ function App() {
           <Route
             path="/register"
             element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />}
+          />
+          <Route
+            path="/forgot-password"
+            element={isAuthenticated ? <Navigate to="/" /> : <ForgotPasswordPage />}
+          />
+          <Route
+            path="/reset-password/:token"
+            element={isAuthenticated ? <Navigate to="/" /> : <ResetPasswordPage />}
           />
 
           {/* Protected Routes */}

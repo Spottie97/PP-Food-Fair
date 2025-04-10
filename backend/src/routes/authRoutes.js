@@ -5,14 +5,17 @@ const {
   getMe,
   logout,
   verifyEmail,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 const { check, validationResult } = require("express-validator");
 const ErrorResponse = require("../utils/errorResponse");
+const mongoose = require("mongoose");
+
+const { protect, authorize } = require("../middleware/authMiddleware");
+const rateLimiterMiddleware = require("../middleware/rateLimiter");
 
 const router = express.Router();
-
-// We need a middleware to protect routes like /me and /logout
-const { protect } = require("../middleware/authMiddleware");
 
 // Middleware to handle validation errors
 const validateRequest = (req, res, next) => {
@@ -53,5 +56,9 @@ router.get("/logout", protect, logout); // Protect this route
 
 // Add route for email verification
 router.get("/verifyemail", verifyEmail);
+
+// Add routes for password reset
+router.post("/forgotpassword", rateLimiterMiddleware, forgotPassword);
+router.put("/resetpassword/:resettoken", resetPassword);
 
 module.exports = router;

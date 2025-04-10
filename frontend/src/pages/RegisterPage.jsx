@@ -13,7 +13,7 @@ import {
   Link,
   Grid,
 } from '@mui/material';
-import apiClient from '../services/apiClient'; // Import API client
+import apiClient from '../services/api'; // Import API client
 
 const RegisterPage = () => {
   const navigate = useNavigate();

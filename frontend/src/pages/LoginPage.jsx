@@ -109,6 +109,11 @@ const LoginPage = () => {
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
           </Button>
           <Grid container justifyContent="flex-end">
+            <Grid item xs>
+              <Link component={RouterLink} to="/forgot-password" variant="body2">
+                Forgot password?
+              </Link>
+            </Grid>
             <Grid item>
               <Link component={RouterLink} to="/register" variant="body2">
                 {"Don't have an account? Sign Up"}
