@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto"); // Import crypto for token generation
 
 const UserSchema = new mongoose.Schema({
   username: {
@@ -30,6 +31,14 @@ const UserSchema = new mongoose.Schema({
     enum: ["user", "admin", "manager"], // Add 'manager' role
     default: "user",
   },
+  // Email Verification Fields
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: String,
+  emailVerificationExpire: Date,
+
   createdAt: {
     type: Date,
     default: Date.now,
@@ -52,6 +61,23 @@ UserSchema.pre("save", async function (next) {
 // Method to compare entered password with hashed password in database
 UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Method to generate and hash email verification token
+UserSchema.methods.getEmailVerificationToken = function () {
+  // Generate token
+  const verificationToken = crypto.randomBytes(20).toString("hex");
+
+  // Hash token and set to emailVerificationToken field
+  this.emailVerificationToken = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  // Set expire time (e.g., 10 minutes)
+  this.emailVerificationExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  return verificationToken; // Return the *unhashed* token to be sent via email
 };
 
 module.exports = mongoose.model("User", UserSchema);

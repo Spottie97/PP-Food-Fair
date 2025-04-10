@@ -13,6 +13,7 @@ import {
   Link,
   Grid,
 } from '@mui/material';
+import apiClient from '../services/apiClient'; // Import API client
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -22,11 +23,13 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState(''); // State for success message
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    setSuccessMessage(''); // Clear success message on new attempt
 
     if (!username || !email || !password || !confirmPassword) {
       setError('Please fill in all fields.');
@@ -42,14 +45,35 @@ const RegisterPage = () => {
     }
 
     setLoading(true);
-    const registerResult = await register(username, email, password);
+    // Use the register function directly from API client now, as AuthContext won't handle it the same way
+    try {
+      const response = await apiClient.post('/auth/register', { username, email, password });
+      if (response.data.success) {
+        // Display success message instead of navigating
+        setSuccessMessage(response.data.message || 'Registration successful! Please check your email to verify your account.');
+        // Clear form fields
+        setUsername('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+      } else {
+        setError(response.data.message || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      console.error("Registration error:", err.response || err);
+      setError(err.response?.data?.message || 'An error occurred during registration.');
+    }
+    // const registerResult = await register(username, email, password);
     setLoading(false);
 
+    // Remove navigation logic as user needs to verify first
+    /*
     if (registerResult === true) {
       navigate('/'); // Redirect to dashboard after successful registration
     } else {
       setError(registerResult || 'Registration failed. Please try again.');
     }
+    */
   };
 
   return (
@@ -60,6 +84,7 @@ const RegisterPage = () => {
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
           {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
+          {successMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{successMessage}</Alert>} {/* Display success message */}
           <TextField
             margin="normal"
             required

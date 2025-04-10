@@ -68,19 +68,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (username, email, password, role = 'user') => {
+  const register = async (username, email, password) => {
     try {
-      const response = await apiClient.post('/auth/register', { username, email, password, role });
+      // We just call the API here. The response doesn't include a token.
+      const response = await apiClient.post('/auth/register', { username, email, password });
       if (response.data.success) {
-        setToken(response.data.token);
-        // User state will be updated by the useEffect hook
-        return true;
+        // Return success status and message
+        return { success: true, message: response.data.message };
       } else {
-        return response.data.message || 'Registration failed';
+        // Return failure status and message
+        return { success: false, message: response.data.message || 'Registration failed' };
       }
     } catch (error) {
       console.error('Registration error:', error.response?.data?.message || error.message);
-      return error.response?.data?.message || 'An error occurred during registration.';
+      // Return failure status and error message
+      return { success: false, message: error.response?.data?.message || 'An error occurred during registration.' };
     }
   };
 

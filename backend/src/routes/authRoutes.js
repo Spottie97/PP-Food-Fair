@@ -4,6 +4,7 @@ const {
   login,
   getMe,
   logout,
+  verifyEmail,
 } = require("../controllers/authController");
 const { check, validationResult } = require("express-validator");
 const ErrorResponse = require("../utils/errorResponse");
@@ -49,5 +50,8 @@ router.post("/register", registerValidationRules, validateRequest, register);
 router.post("/login", loginValidationRules, validateRequest, login);
 router.get("/me", protect, getMe); // Protect this route
 router.get("/logout", protect, logout); // Protect this route
+
+// Add route for email verification
+router.get("/verifyemail", verifyEmail);
 
 module.exports = router;

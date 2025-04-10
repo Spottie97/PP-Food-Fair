@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -22,14 +22,26 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Get the page user was trying to access before being redirected to login
   const from = location.state?.from?.pathname || "/";
 
+  // Check for verification success message on mount
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.get('verified') === 'true') {
+      setSuccessMessage('Email verified successfully! You can now log in.');
+      // Optionally, clear the query param from URL without reloading
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    setSuccessMessage('');
     setLoading(true);
 
     if (!email || !password) {
@@ -59,6 +71,7 @@ const LoginPage = () => {
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
           {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
+          {successMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{successMessage}</Alert>}
           <TextField
             margin="normal"
             required
