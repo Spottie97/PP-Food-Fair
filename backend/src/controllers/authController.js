@@ -16,19 +16,11 @@ const getSignedJwtToken = (id) => {
 exports.register = asyncHandler(async (req, res, next) => {
   const { username, email, password } = req.body; // Role is determined by server now
 
-  // Determine role based on email matching ADMIN_EMAIL from environment
-  let roleForUser = "user";
-  if (process.env.ADMIN_EMAIL && email === process.env.ADMIN_EMAIL) {
-    roleForUser = "admin";
-    console.log(`Assigning admin role to user: ${email}`); // Log admin assignment
-  }
-
-  // Create user
+  // Create user - Default role is handled by the schema ('user')
   const user = await User.create({
     username,
     email,
     password,
-    role: roleForUser,
   });
 
   sendTokenResponse(user, 201, res);

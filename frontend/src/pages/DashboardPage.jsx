@@ -30,7 +30,8 @@ const DashboardPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth(); // Get user info from context
-  const isAdmin = user?.role === 'admin'; // Check if user is admin
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager'; // Add check for manager
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -152,7 +153,7 @@ const DashboardPage = () => {
             variant="contained"
             startIcon={<AddCircleOutlineIcon />}
             onClick={handleAddRecipe}
-            disabled={!isAdmin} // Disable if not admin
+            disabled={!isAdmin && !isManager} // Disable if NOT admin AND NOT manager
             sx={{ mr: 1 }}
           >
             Add New Recipe
@@ -204,12 +205,12 @@ const DashboardPage = () => {
                       <IconButton size="small" onClick={() => handleViewRecipe(recipe._id)} title="View Details">
                          <VisibilityIcon fontSize="small" />
                       </IconButton>
-                      {isAdmin && ( // Conditionally render Edit button
+                      {(isAdmin || isManager) && ( // Conditionally render Edit button for Admin or Manager
                          <IconButton size="small" onClick={() => handleEditRecipe(recipe._id)} title="Edit">
                             <EditIcon fontSize="small" />
                          </IconButton>
                       )}
-                      {isAdmin && ( // Conditionally render Delete button
+                      {(isAdmin || isManager) && ( // Conditionally render Delete button for Admin or Manager
                          <IconButton size="small" onClick={() => handleDeleteRecipe(recipe._id)} title="Delete">
                             <DeleteIcon fontSize="small" />
                          </IconButton>

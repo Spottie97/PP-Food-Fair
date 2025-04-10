@@ -35,6 +35,7 @@ const IngredientManagementPage = () => {
   const [error, setError] = useState('');
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
 
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
@@ -159,10 +160,10 @@ const IngredientManagementPage = () => {
   };
 
   // --- Render Logic ---
-  if (!isAdmin) {
+  if (!isAdmin && !isManager) {
     return (
       <Container>
-        <Alert severity="error" sx={{ mt: 3 }}>Access Denied. Only admins can manage ingredients.</Alert>
+        <Alert severity="error" sx={{ mt: 3 }}>Access Denied. Only Admins or Managers can manage ingredients.</Alert>
       </Container>
     );
   }

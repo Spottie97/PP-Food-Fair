@@ -71,7 +71,7 @@ router
   .route("/")
   .get(getAllLabor) // Any logged-in user can view labor data
   .post(
-    authorize("admin"), // Only admin can create
+    authorize("admin", "manager"), // Allow admin and manager
     createLaborValidationRules,
     validateRequest,
     createLabor
@@ -81,13 +81,13 @@ router
   .route("/:id")
   .get(idParamValidationRules, validateRequest, getLaborById) // Any logged-in user
   .put(
-    authorize("admin"), // Only admin can update
+    authorize("admin", "manager"), // Allow admin and manager
     updateLaborValidationRules,
     validateRequest,
     updateLabor
   )
   .delete(
-    authorize("admin"), // Only admin can delete
+    authorize("admin", "manager"), // Allow admin and manager
     idParamValidationRules,
     validateRequest,
     deleteLabor

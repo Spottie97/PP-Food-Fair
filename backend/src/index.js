@@ -9,9 +9,51 @@ const { logger } = require("./utils/logger");
 const routes = require("./routes");
 const swaggerSpec = require("./config/swagger");
 const connectDB = require("./config/db");
+const User = require("./models/User"); // Import User model
 
-// Connect to Database
-connectDB();
+// Function to create default admin user
+const createDefaultAdmin = async () => {
+  try {
+    const adminExists = await User.findOne({ role: "admin" });
+    if (!adminExists) {
+      const defaultAdminEmail = "admin@example.com";
+      const defaultAdminPassword = "changeme"; // **IMPORTANT: CHANGE THIS PASSWORD AFTER FIRST LOGIN**
+
+      const existingDefault = await User.findOne({ email: defaultAdminEmail });
+      if (!existingDefault) {
+        await User.create({
+          username: "admin",
+          email: defaultAdminEmail,
+          password: defaultAdminPassword,
+          role: "admin",
+        });
+        logger.info("Default admin user created. Email: admin@example.com");
+        logger.warn(
+          "IMPORTANT: Please log in as admin@example.com and change the default password ('changeme') immediately!"
+        );
+      } else {
+        // If user with that email exists but isn't admin, log warning
+        if (existingDefault.role !== "admin") {
+          logger.warn(
+            `User with email ${defaultAdminEmail} exists but is not admin. Default admin creation skipped.`
+          );
+        }
+      }
+    } else {
+      logger.info("Admin user already exists. Default admin creation skipped.");
+    }
+  } catch (error) {
+    logger.error("Error checking/creating default admin user:", error);
+  }
+};
+
+// Connect to Database and then ensure default admin exists
+const initializeApp = async () => {
+  await connectDB();
+  await createDefaultAdmin(); // Ensure admin exists after DB connection
+};
+
+initializeApp(); // Initialize DB and check/create admin
 
 const app = express();
 

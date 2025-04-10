@@ -148,26 +148,26 @@ router
   .route("/")
   .get(getAllRecipes) // Anyone logged in can view
   .post(
-    authorize("admin"),
+    authorize("admin", "manager"),
     createRecipeValidationRules,
     validateRequest,
     createRecipe
-  ); // Only admin can create
+  );
 
 router
   .route("/:id")
   .get(idParamValidationRules, validateRequest, getRecipeById)
   .put(
-    authorize("admin"),
+    authorize("admin", "manager"),
     updateRecipeValidationRules,
     validateRequest,
     updateRecipe
   )
   .delete(
-    authorize("admin"),
+    authorize("admin", "manager"),
     idParamValidationRules,
     validateRequest,
     deleteRecipe
-  ); // Only admin can delete
+  );
 
 module.exports = router;

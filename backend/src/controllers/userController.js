@@ -31,9 +31,12 @@ exports.updateUserRole = asyncHandler(async (req, res, next) => {
   const { role } = req.body;
 
   // Validate the provided role
-  if (!role || !["admin", "user"].includes(role)) {
+  if (!role || !["admin", "user", "manager"].includes(role)) {
     return next(
-      new ErrorResponse("Invalid role provided. Must be 'admin' or 'user'", 400)
+      new ErrorResponse(
+        "Invalid role provided. Must be 'admin', 'user', or 'manager'",
+        400
+      )
     );
   }
 
@@ -66,23 +69,30 @@ exports.updateUserRole = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, data: userToUpdate });
 });
 
-// @desc    Delete user (Optional - Add if needed, be careful!)
+// @desc    Delete user (Admin only)
 // @route   DELETE /api/v1/users/:id
 // @access  Private/Admin
-// exports.deleteUser = asyncHandler(async (req, res, next) => {
-//   const userToDelete = await User.findById(req.params.id);
+exports.deleteUser = asyncHandler(async (req, res, next) => {
+  const userToDelete = await User.findById(req.params.id);
 
-//   if (!userToDelete) {
-//     return next(new ErrorResponse(`User not found with id ${req.params.id}`, 404));
-//   }
+  if (!userToDelete) {
+    return next(
+      new ErrorResponse(`User not found with id ${req.params.id}`, 404)
+    );
+  }
 
-//   // Prevent admin from deleting themselves
-//   if (userToDelete._id.toString() === req.user.id) {
-//      return next(new ErrorResponse('Admins cannot delete themselves', 403));
-//   }
+  // Prevent admin from deleting themselves
+  if (userToDelete._id.toString() === req.user.id) {
+    return next(new ErrorResponse("Admins cannot delete themselves", 403));
+  }
 
-//   await userToDelete.remove(); // Or User.findByIdAndDelete(req.params.id)
-//   console.log(`User deleted: ${userToDelete.email} by ${req.user.email}`);
+  // Optional TODO: Add checks here if you want to prevent deletion based on other criteria
+  // e.g., if the user has created recipes/ingredients, reassign them or prevent deletion?
 
-//   res.status(200).json({ success: true, data: {} });
-// });
+  await userToDelete.deleteOne(); // Use deleteOne() on the document instance
+  console.log(
+    `User deleted: ${userToDelete.email} (ID: ${userToDelete._id}) by ${req.user.email} (ID: ${req.user.id})`
+  );
+
+  res.status(200).json({ success: true, data: {} }); // Or 204 No Content
+});

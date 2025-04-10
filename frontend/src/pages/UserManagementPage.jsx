@@ -17,8 +17,10 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Button // For potential refresh button
+  Button, // For potential refresh button
+  IconButton
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
@@ -84,6 +86,28 @@ const UserManagementPage = () => {
 
   };
 
+  const handleDeleteUser = async (userId, userEmail) => {
+      if (!window.confirm(`Are you sure you want to delete the user ${userEmail}? This action cannot be undone.`)) {
+          return;
+      }
+      setUpdateError(''); // Clear previous errors
+      setUpdatingUserId(userId); // Show loading state on the row
+      try {
+          const response = await apiClient.delete(`/users/${userId}`);
+          if (response.data.success) {
+              // Remove the user from the local state
+              setUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
+          } else {
+              throw new Error(response.data.message || 'Failed to delete user');
+          }
+      } catch (err) {
+          console.error("Delete user error:", err);
+          setUpdateError(`Failed to delete user ${userEmail}: ${err.message || 'Server error'}`);
+      } finally {
+          setUpdatingUserId(null); // Clear loading indicator for this row
+      }
+  };
+
   // Render Logic
   // Note: Route protection in App.jsx already handles non-admins
 
@@ -116,6 +140,7 @@ const UserManagementPage = () => {
                 <TableCell>Username</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -143,10 +168,25 @@ const UserManagementPage = () => {
                           >
                             <MenuItem value="user">User</MenuItem>
                             <MenuItem value="admin">Admin</MenuItem>
+                            <MenuItem value="manager">Manager</MenuItem>
                           </Select>
                           {updatingUserId === user._id && <CircularProgress size={20} sx={{ position: 'absolute', right: 5, top: 'calc(50% - 10px)' }} />}
                         </FormControl>
                       )}
+                    </TableCell>
+                    <TableCell align="right">
+                       {/* Only show delete button if it's not the logged-in user */} 
+                       {user._id !== loggedInUser?._id && (
+                          <IconButton
+                             size="small"
+                             onClick={() => handleDeleteUser(user._id, user.email)}
+                             disabled={updatingUserId === user._id}
+                             title="Delete User"
+                             color="error"
+                          >
+                             <DeleteIcon fontSize="small" />
+                          </IconButton>
+                       )}
                     </TableCell>
                   </TableRow>
                 ))

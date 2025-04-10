@@ -9,6 +9,7 @@ import {
 import { Box, CircularProgress, Container, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import logo from './assets/logo.png'; // Import the logo image
 
 // Import actual pages
 import LoginPage from './pages/LoginPage';
@@ -27,20 +28,21 @@ const NotFoundPage = () => <Container><div>404 Not Found Placeholder</div></Cont
 const Layout = ({ children }) => {
   const { logout, user, isAuthenticated } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
   const navigate = useNavigate();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
         <Toolbar sx={{ flexWrap: 'wrap' }}>
-          <Typography variant="h6" color="inherit" noWrap sx={{ flexGrow: 1 }}>
-            Pie Pricing Calculator
-          </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+            <img src={logo} alt="Food Fair Logo" style={{ height: '40px', marginRight: '16px' }} />
+          </Box>
           <nav>
             {isAuthenticated && (
               <Button color="inherit" onClick={() => navigate('/')} sx={{ mr: 1 }}>Dashboard</Button>
             )}
-            {isAdmin && (
+            {(isAdmin || isManager) && (
               <Button color="inherit" onClick={() => navigate('/ingredients')} sx={{ mr: 1 }}>Ingredients</Button>
             )}
             {isAdmin && (
@@ -112,7 +114,7 @@ function App() {
           <Route
             path="/recipes/new"
             element={
-              <ProtectedRoute roles={['admin']}>
+              <ProtectedRoute roles={['admin', 'manager']}>
                 <RecipeFormPage />
               </ProtectedRoute>
             }
@@ -133,7 +135,7 @@ function App() {
           <Route
             path="/recipes/:id/edit"
             element={
-              <ProtectedRoute roles={['admin']}>
+              <ProtectedRoute roles={['admin', 'manager']}>
                 <RecipeFormPage />
               </ProtectedRoute>
             }
@@ -151,7 +153,7 @@ function App() {
           <Route
             path="/ingredients"
             element={
-              <ProtectedRoute roles={['admin']}>
+              <ProtectedRoute roles={['admin', 'manager']}>
                 <IngredientManagementPage />
               </ProtectedRoute>
             }

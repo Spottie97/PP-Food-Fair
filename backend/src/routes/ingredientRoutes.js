@@ -71,7 +71,7 @@ router
   .route("/")
   .get(getAllIngredients) // Any logged-in user can view ingredients
   .post(
-    authorize("admin"), // Only admin can create
+    authorize("admin", "manager"), // Allow admin and manager
     createIngredientValidationRules,
     validateRequest,
     createIngredient
@@ -81,13 +81,13 @@ router
   .route("/:id")
   .get(idParamValidationRules, validateRequest, getIngredientById) // Any logged-in user
   .put(
-    authorize("admin"), // Only admin can update
+    authorize("admin", "manager"), // Allow admin and manager
     updateIngredientValidationRules,
     validateRequest,
     updateIngredient
   )
   .delete(
-    authorize("admin"), // Only admin can delete
+    authorize("admin", "manager"), // Allow admin and manager
     idParamValidationRules,
     validateRequest,
     deleteIngredient
